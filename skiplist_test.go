@@ -1,6 +1,8 @@
 package skiplist
 
 import (
+	"fmt"
+	"strconv"
 	"testing"
 )
 
@@ -42,4 +44,17 @@ func TestSkipList_Basic(t *testing.T) {
 	if !exit || val != 3 {
 		t.Errorf("fail to get element")
 	}
+}
+
+func TestSkipList_Delete(t *testing.T) {
+	sl := NewSkipList()
+	for i := 0; i < 100; i++ {
+		sl.Insert(strconv.Itoa(i), struct{}{})
+	}
+	fmt.Println(sl)
+
+	for i := 0; i < 100; i++ {
+		sl.Delete(strconv.Itoa(i))
+	}
+	fmt.Println(sl)
 }

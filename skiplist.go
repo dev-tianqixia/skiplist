@@ -1,8 +1,10 @@
 package skiplist
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
+	"strings"
 )
 
 // reference:
@@ -10,7 +12,6 @@ import (
 // https://azrael.digipen.edu/~mmead/www/Courses/CS280/SkipLists.html
 // https://opendatastructures.org/newhtml/ods/latex/skiplists.html
 
-// TODO: make maxLevel configurable
 const maxLevel = 16
 
 type node struct {
@@ -18,6 +19,7 @@ type node struct {
 	key string
 	val interface{}
 	// forward[i] points to node's successor in list Li
+	// the max number of lists is 16 for now, TODO: make maxLevel configurable
 	forward [maxLevel]*node
 }
 
@@ -59,8 +61,11 @@ func (l *SkipList) Get(key string) (interface{}, bool) {
 
 func (l *SkipList) Insert(key string, val interface{}) {
 	update := make([]*node, maxLevel)
-	n := l.sentinel
+	for i := range update {
+		update[i] = l.sentinel
+	}
 
+	n := l.sentinel
 	for i := l.level; i >= 0; i-- {
 		for n.forward[i] != nil && n.forward[i].key < key {
 			n = n.forward[i]
@@ -98,11 +103,45 @@ func (l *SkipList) Insert(key string, val interface{}) {
 }
 
 func (l *SkipList) Delete(key string) {
+	update := make([]*node, maxLevel)
 
+	n := l.sentinel
+	for i := l.level; i >= 0; i-- {
+		for n.forward[i] != nil && n.forward[i].key < key {
+			n = n.forward[i]
+		}
+		update[i] = n
+	}
+
+	if n = n.forward[0]; n != nil && n.key == key {
+		// n is the target to be deleted
+		for i := 0; i <= l.level; i++ {
+			if update[i].forward[i] != n {
+				break
+			}
+			// assert: update[i].forward[i] == n
+			update[i].forward[i] = n.forward[i]
+		}
+		if l.sentinel.forward[l.level] == nil && l.level > 0 {
+			l.level--
+		}
+	}
 }
 
 func (l *SkipList) String() string {
-	return ""
+	var builder strings.Builder
+
+	for i := l.level; i >= 0; i-- {
+		builder.WriteString(fmt.Sprintf("level %d: ", i))
+		n := l.sentinel.forward[i]
+		for n != nil {
+			builder.WriteString(fmt.Sprintf("%s -> ", n.key))
+			n = n.forward[i]
+		}
+		builder.WriteString("nil\n")
+	}
+
+	return builder.String()
 }
 
 // Size returns the number of elements in the list
